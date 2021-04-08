@@ -1,0 +1,19 @@
+#connected1, #connected2 {
+    color: green;
+    font-weight: bold;
+}
+
+#loadfilecontainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+  
+input {
+    margin-top: 10px;
+}
+  
+textarea {
+    margin-top: 15px;
+    width: 70%;
+}
