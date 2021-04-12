@@ -21,60 +21,66 @@ let textarea = document.querySelector('textarea');
 input.addEventListener("change", () => {
     // Variables
     let files = input.files;
+    let sampleData = [];
 
     // Error handling
     if (files.length == 0) return; 
 
     // Loading Data
     sampleData = LoadFilesFromInput(files);
-
-    // await reader.readAsText(file)
-    console.log(sampleData);
+    console.log(sampleData, "Y");
 });
 
 
 /* HELPER FUNCTIONS */
 
+function readFile(file) {
+    return new Promise((resolve, reject) => {
+        let reader = new FileReader();
+
+        reader.onload = (e) => {
+            const textFile = e.target.result;
+
+            // This is a regular expression to identify carriage
+            // Returns and line breaks
+            const lines = textFile.split(/\r\n|\n/);
+            textarea.value = lines.join("\n");
+
+            // Creating object and add to sample array
+            const dataObj = CreateSampleObject(lines);
+            dataObj["SampleName"] = dataObj.metaData.TITLE;
+            
+            resolve(dataObj);
+        };
+
+        reader.onerror = (e) => alert(e.target.error.name);
+        reader.readAsText(file);
+    });
+}
+   
 async function LoadFilesFromInput(files) {
     let sampleData = [];
 
     for (const file of files) {
         // Skip iteration if file is not .txt
-        if (file.name.split('.').pop() != "txt") continue
+        if (file.name.split(".").pop() != "txt") continue;
 
-        let reader = new FileReader();
-
-        reader.onload = (e) => {
-            const textFile = e.target.result;
-            
-            // This is a regular expression to identify carriage 
-            // Returns and line breaks
-            const lines = textFile.split(/\r\n|\n/);
-            textarea.value = lines.join('\n');
-
-            // Creating object and add to sample array
-            const dataObj = CreateSampleObject(lines);
-            dataObj['SampleName'] = dataObj.metaData.TITLE;
-            sampleData.push(dataObj);
-        };
-        reader.onerror = (e) => alert(e.target.error.name);
-        await reader.readAsText(file);
+        const dataObj = await readFile(file);
+        sampleData.push(dataObj);
     }
 
-    return sampleData
+    console.log(sampleData, "X");
+
+    return sampleData;
 }
 
+////////////////////
+
 function CreateSampleObject(lines) {
-    const searchWord = ["TITLE", "DATE", "TIME", "NPOINTS", "Concentration"];
-    const indexOfData = [1, 1, 1, 1, 1];
-
-    const metaData = GetMetaDataForObject(searchWord, indexOfData, lines);
-    console.log(metaData);
-
+    const metaData = GetMetaDataForObject(lines);
     const data = GetDataForObject(metaData, lines);
-    console.log(data);
 
-    result = {
+    const result = {
         metaData,
         data
     }
@@ -82,7 +88,11 @@ function CreateSampleObject(lines) {
     return result
 }
 
-function GetMetaDataForObject(searchWord, indexOfData, lines) {
+function GetMetaDataForObject(lines) {
+    // Search for line in data file and index of coresponding data
+    const searchWord = ["TITLE", "DATE", "TIME", "NPOINTS", "Concentration"];
+    const indexOfData = [1, 1, 1, 1, 1];
+
     const metaData = [];
 
     // Find all lines containing 'searchWord'.
